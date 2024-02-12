@@ -1,5 +1,6 @@
 <template>
   <div class="container">
+    <app-alert :alert="alert" @close="alert = null"></app-alert>
     <form class="card" @submit.prevent="createPerson">
       <h2>Работа с базой данных</h2>
 
@@ -10,19 +11,34 @@
 
       <button class="btn primary" :disabled="name.length === 0">Создать человека</button>
     </form>
-<AppChel :people="people"></AppChel>
+    <app-loader v-if="loading"></app-loader>
+<AppChel
+  v-else
+ :people="people"
+ @click="loadPeople"
+ @remove="removePerson"
+ ></AppChel>
   </div>
+
 </template>
 
 <script>
 import AppChel from './AppChel.vue'
+import AppAlert from './AppAlert.vue'
+import AppLoader from './AppLoader.vue'
+import axios from 'axios'
 
 export default {
   data(){
     return{
       name:"",
-      people:[]
+      people:[],
+      alert: null,
+      loading: false,
     }
+  },
+  mounted(){
+    this.loadPeople()
   },
   methods:{
     async createPerson(){
@@ -38,11 +54,68 @@ export default {
 
       const firebaseData = await response.json()
 
-      console.log(firebaseData)
+      
+      this.people.push({
+        firstName:this.name,
+        id: firebaseData.name
+      })
+
       this.name = ''
+    },
+     loadPeople(){
+      this.loading = true
+        setTimeout(async () => {
+      try{
+        const {data} = await axios.get('https://vue-with-http-49fd8-default-rtdb.firebaseio.com/people.json')
+        if(!data){
+        throw new Error('Список людей пуст')
+     }
+     
+      this.people = Object.keys(data).map(key => {
+      return{
+        id: key,
+        ...data[key]
+      }
+     })
+     this.loading = false
+     }
+      catch (e){
+        this.alert = {
+          type: 'danger',
+          title: 'Ошибка',
+          text: e.message
+        }
+        this.loading = false  
+        console.log(e.message)
+      }
+    }, 1500);
+     
+      
+     
+    
+    },
+    async removePerson(id){
+      try{
+        const name = this.people.find(person => person.id == id).firstName
+        await axios.delete(`https://vue-with-http-49fd8-default-rtdb.firebaseio.com/people/${id}.json`)
+      this.people = this.people.filter(person => person.id !== id)
+      this.alert ={
+        type:'primary',
+        title:'Успешно!',
+        text: `Пользователь с именем "${name}" был успешно удален`
+      }
+      }
+      catch(e){
+        this.alert = {
+          type:'primary',
+        title:'Неуспешно!',
+        text: 'Пользователь не был удален'
+        }
+      }
+
     }
   },
-  components:{AppChel}
+  components:{AppChel, AppAlert,AppLoader}
 }
 </script>
 

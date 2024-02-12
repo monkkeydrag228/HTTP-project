@@ -68,7 +68,7 @@ h3 {
 /*}*/
 
 .btn {
-    color: #42b983;
+    color: #b94242;
     position: relative;
     place-content: center;
     place-items: center;
@@ -105,7 +105,7 @@ h3 {
 }
 
 .btn.primary {
-    background: #42b983;
+    background: #ff4800;
     color: #fff;
 }
 
